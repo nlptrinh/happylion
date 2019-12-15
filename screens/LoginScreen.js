@@ -1,32 +1,141 @@
-import React, {Component} from 'react';
-import { View, StyleSheet, AppRegistry, Text, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, AppRegistry, Text, TouchableOpacity, Image, Button } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 import { ExpoLinksView } from '@expo/samples';
+
 import Colors from '../constants/Colors';
 
-export default class App extends Component {
-    constructor(props) {
-        super(props)
+import firebase from 'firebase';
+import '@firebase/firestore';
+import * as Google from 'expo-google-app-auth';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+//-----------------------------------
+
+//const fs = firebase.firestore();
+
+export default class LoginScreen extends React.Component {
+
+  db = firebase.firestore();
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      myText: 'Welcome to',
+      user: null
     }
-    render() {
-        return (
-        <View style={styles.container}>
-            <View style={styles.boxContainer}>
-                <Text style={styles.appTitle}>Welcome to</Text>
-                <Text style={styles.appTitle}>PomoTodo</Text>
-            </View>
-            <TouchableOpacity style={styles.btnClickContain} activeOpacity={0.5}>
-              <View style={styles.btnContainer}>
-                <Image source={require('D:/D/CS300/pomotodo/assets/images/googleLogo.png')} style={styles.googleIcon}/>
-                <Text style={styles.googleText}> Sign in with Google</Text>
-              </View>
-            </TouchableOpacity>
-        </View>
+  }
+
+  isUserEqual = (googleUser, firebaseUser) => {
+    if (firebaseUser) {
+      var providerData = firebaseUser.providerData;
+      for (var i = 0; i < providerData.length; i++) {
+        if (
+          providerData[i].providerId ===
+          firebase.auth.GoogleAuthProvider.PROVIDER_ID &&
+          providerData[i].uid === googleUser.getBasicProfile().getId()
+        ) {
+          // We don't need to reauth the Firebase connection.
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  onSignIn = googleUser => {
+    //console.log('Google Auth Response', googleUser);
+    // We need to register an Observer on Firebase Auth to make sure auth is initialized.
+    var unsubscribe = firebase.auth().onAuthStateChanged(function (firebaseUser) {
+
+      unsubscribe();
+      // Check if we are already signed-in Firebase with the correct user.
+      if (!this.isUserEqual(googleUser, firebaseUser)) {
+        // Build Firebase credential with the Google ID token.
+        var credential = firebase.auth.GoogleAuthProvider.credential(
+          //googleUser.getAuthResponse().id_token);
+          googleUser.idToken,
+          googleUser.accessToken
         );
+        // Sign in with credential from the Google user.
+        firebase
+          .auth()
+          .signInWithCredential(credential).then(function (result) {
+            //if (result.additionalUserInfo.isNewUser) {
+            console.log(result);
+            firebase.firestore().collection('UserProfile').doc(result.user.uid.toString()).set({
+              Name: result.user.displayName,
+              Email: result.user.email
+            });
+            this.setState({ myText: result.user.displayName });
+            //this.props.navigation.navigate('HomeScreen');
+            //}
+          })
+          .catch(function (error) {
+            // Handle Errors here.
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // The email of the user's account used.
+            var email = error.email;
+            // The firebase.auth.AuthCredential type that was used.
+            var credential = error.credential;
+            // ...
+          });
+      } 
+      else {
+        console.log('User already signed-in Firebase.');
+      }
+    }.bind(this));
+  }
+
+  signInWithGoogleAsync = async () => {
+    try {
+      const result = await Google.logInAsync({
+        behavior: 'web',
+        androidClientId: '745212572291-f0f215utad0flvshd6mpkn855sike70j.apps.googleusercontent.com',
+        iosClientId: '745212572291-sip4oiahkrmtpufhsguf74lhfmhl9gbd.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+      });
+
+      if (result.type === 'success') {
+        this.onSignIn(result);
+        return result.accessToken;
+      } 
+      else {
+        return { cancelled: true };
+      }
+    } 
+    catch (e) {
+      return { error: true };
     }
+  }
+
+  updateText = () => {
+    tmpText = ''
+  }
+
+  render() {
+    return (
+      <View style={styles.container}>
+        <Button title='Sign out' onPress={() => firebase.auth().signOut()} />
+        <View style={styles.boxContainer}>
+          <View style={styles.textContainer}>
+            <Text style={styles.appTitle}>{this.state.myText}</Text>
+            <Text style={styles.appTitle}>PomoTodo</Text>
+          </View>
+          <TouchableOpacity onPress={() => this.signInWithGoogleAsync()} style={styles.btnClickContain} activeOpacity={0.5}>
+            <View style={styles.btnContainer}>
+              <Image source={require('../assets/images/googleLogo.png')} style={styles.googleIcon} />
+              <Text style={styles.googleText}> Sign in with Google</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -35,76 +144,50 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     backgroundColor: 'rgb(3, 28, 63)',
   },
+  textContainer: {
+    alignItems: "center",
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   boxContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flexWrap: 'wrap',
-    marginTop: 149,
-    // marginBottom: 50,
   },
   appTitle: {
-    // paddingTop: 30,
-    // height:200,
-    paddingLeft: 36,
-    paddingRight: 36,
-    fontSize: 59,
+    textAlign: "center",
+    fontSize: wp("15%"),
     color: '#fff',
   },
-  btnClickContain: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    alignSelf: 'stretch',
-    borderRadius: 5,
-    padding: 5,
-  },
   btnContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    justifyContent: "space-evenly",
+    alignItems: "center",
     flexDirection: 'row',
-    alignItems: 'stretch',
-    alignSelf: 'stretch',
-    width: 261.7,
-    height: 58,
-    marginLeft: 40,
-    marginRight: 40,
+    width: wp("75%"),
+    height: hp("10%"),
+    marginTop: hp("12%"),
     borderRadius: 8,
     backgroundColor: "#fcfcfc",
     shadowColor: "rgba(0, 0, 0, 0.12)",
     shadowOffset: {
-    width: 0,
-    height: 0
+      width: 0,
+      height: 0
     },
     shadowRadius: 8,
     shadowOpacity: 1,
   },
   googleText: {
-    
-    // paddingTop: 16,
-    // paddingBottom: 16,
-    // paddingLeft: 36,
-    // paddingRight: 30,
-    fontSize: 18,
-    color: '#000', 
-    width: 200,
-    height: 40,
+    fontSize: wp("5%"),
+    color: '#000',
     // fontFamily: "Roboto",
-    fontSize: 18,
     fontWeight: "normal",
     fontStyle: "normal",
-    letterSpacing: 0,
-    color: "#000000", 
-    // marginLeft: 10,
-    // marginTop: 2,
-    padding: 18.5 
+    color: "#000000",
+    textAlign: "center",
   },
   googleIcon: {
-    // padding: 9,
-    marginTop: 9,
-    width: 40,
-    height: 40,
+    width: wp("10%"),
+    height: hp("6%"),
     resizeMode: 'stretch',
   }
 });

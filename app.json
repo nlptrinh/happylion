@@ -24,7 +24,17 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thehappylions.pomotodo",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.745212572291-fgpgde952g0n32aknrluav8tb4f42bve"
+        }
+      }
+    },
+    "android": {
+        "package": "com.thehappylions.pomotodo",
+        "googleServicesFile": "./google-services.json"
     }
   }
 }

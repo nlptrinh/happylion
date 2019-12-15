@@ -2,18 +2,23 @@ import React from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-export default class SettingsScreen extends React.Component {
+import firebase from 'firebase';
+import '@firebase/firestore';
+
+//-----------------------------------
+
+export default class FolderScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>SettingsScreen</Text>
+        <Text>FolderScreen</Text>
       </View>
     );
   };
 }
 
-SettingsScreen.navigationOptions = {
-  title: 'Settings',
+FolderScreen.navigationOptions = {
+  title: 'Folders',
 };
 
 const styles = StyleSheet.create({

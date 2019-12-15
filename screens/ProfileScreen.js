@@ -2,18 +2,18 @@ import React from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-export default class SettingsScreen extends React.Component {
+export default class ProfileScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>SettingsScreen</Text>
+        <Text>ProfileScreen</Text>
       </View>
     );
   };
 }
 
-SettingsScreen.navigationOptions = {
-  title: 'Settings',
+ProfileScreen.navigationOptions = {
+  title: 'Profile',
 };
 
 const styles = StyleSheet.create({
